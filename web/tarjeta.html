@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102747">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Mi tarjeta de fidelización</title>
+  <link rel="stylesheet" href="tarjeta.css?v=1.3.2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="config.js?v=1.3.2"></script>
+</head>
+<body>
+<main>
+  <p id="loading" class="center muted">Cargando tu tarjeta…</p>
+  <section id="error" class="card hidden">
+    <h1>Tarjeta no disponible</h1>
+    <p id="errorText" class="muted"></p>
+  </section>
+
+  <section id="card" class="card hidden">
+    <div class="biz">
+      <img id="bizLogo" class="logo hidden" alt="">
+      <div>
+        <p class="eyebrow">TARJETA DE FIDELIZACIÓN</p>
+        <h1 id="bizName"></h1>
+      </div>
+    </div>
+
+    <p class="hello">Hola, <strong id="customerName"></strong></p>
+
+    <div id="completeBanner" class="banner hidden">
+      🎉 ¡Completaste tu tarjeta! Muestra este código en caja para recibir tu premio.
+    </div>
+
+    <div id="nextGoal" class="next-goal hidden"><span id="nextIcon"></span><span id="nextText"></span></div>
+
+    <div class="progress-text"><span id="count">0</span> de <span id="required">0</span> sellos</div>
+    <div id="stamps" class="stamps"></div>
+    <div id="bar" class="bar hidden"><div id="barFill"></div></div>
+
+    <p id="rule" class="rule hidden"></p>
+
+    <div id="milestones" class="milestones hidden"></div>
+
+    <div class="reward">
+      <span class="label">Premio final</span>
+      <strong id="reward"></strong>
+      <span id="remaining" class="muted"></span>
+    </div>
+
+    <div class="qr-box">
+      <div id="qr"></div>
+      <p class="muted small">Muestra este código en caja en cada compra para sumar tu sello.</p>
+    </div>
+  </section>
+
+  <section id="historyBox" class="card hidden">
+    <h2>Mis visitas en este ciclo</h2>
+    <ul id="stampList" class="list"></ul>
+    <h2>Premios recibidos</h2>
+    <ul id="redemptionList" class="list"></ul>
+    <p id="memberSince" class="muted small"></p>
+  </section>
+
+  <p class="center muted small">Guarda esta página en tu inicio para tenerla siempre a mano.<br>Con tecnología de <strong>EMISOFT</strong></p>
+</main>
+<script src="tarjeta.js?v=1.3.2"></script>
+</body>
+</html>

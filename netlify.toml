@@ -1,0 +1,5 @@
+# Configuración de Netlify para EMISOFT Fidelización Digital.
+# Sitio estático: no hay paso de compilación; se publica la carpeta "web".
+[build]
+  publish = "web"
+  command = ""

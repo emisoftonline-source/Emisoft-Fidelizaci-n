@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102747">
+  <title>EMISOFT | Fidelización Digital</title>
+  <link rel="stylesheet" href="styles.css?v=1.3.2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="config.js?v=1.3.2"></script>
+</head>
+<body>
+<header>
+  <div class="brand">EMI<span>SOFT</span><small>FIDELIZACIÓN DIGITAL</small></div>
+  <button id="logout" class="ghost hidden">Cerrar sesión</button>
+</header>
+<main>
+  <section id="login" class="panel narrow">
+    <p class="eyebrow">PLATAFORMA EN LA NUBE</p>
+    <h1>Bienvenido</h1>
+    <p>Ingresa al panel de tu negocio.</p>
+    <label>Correo electrónico<input id="email" type="email" autocomplete="username"></label>
+    <label>Contraseña<input id="password" type="password" autocomplete="current-password"></label>
+    <button id="loginBtn">Ingresar</button>
+    <p id="loginMsg" class="msg"></p>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="welcome">
+      <div class="welcome-main">
+        <img id="businessLogo" class="biz-logo hidden" alt="">
+        <div>
+          <p class="eyebrow" id="roleLabel">PANEL DE FIDELIZACIÓN</p>
+          <h1 id="businessName">Mi negocio</h1>
+          <p id="userInfo"></p>
+        </div>
+      </div>
+      <div class="welcome-side">
+        <label id="businessPickerWrap" class="hidden picker">Negocio
+          <select id="businessPicker"></select>
+        </label>
+        <div class="pill" id="statusPill">EN LÍNEA</div>
+      </div>
+    </div>
+    <p id="appMsg" class="msg"></p>
+    <div id="suspendedNotice" class="notice warn hidden">
+      Este negocio está <strong>suspendido</strong>. Sus usuarios no pueden ingresar; solo el superadministrador puede verlo.
+    </div>
+
+    <nav>
+      <button class="tab active" data-tab="customers">Clientes</button>
+      <button class="tab" data-tab="scanner">Escanear QR</button>
+      <button class="tab admin-only" data-tab="settings">Fidelización</button>
+      <button class="tab" data-tab="history">Historial de premios</button>
+      <button class="tab admin-only" data-tab="audit">Auditoría</button>
+      <button class="tab super-only" data-tab="businesses">Negocios</button>
+    </nav>
+
+    <!-- CLIENTES -->
+    <section id="customers" class="panel tab-panel">
+      <div class="section-head">
+        <div><h2>Clientes</h2><p>Registra clientes y consulta el progreso de sus tarjetas.</p></div>
+      </div>
+      <div class="form-grid">
+        <label>Nombre completo<input id="customerName" placeholder="Ej. María Pérez"></label>
+        <label>Celular<input id="customerPhone" placeholder="Ej. 70000000" inputmode="tel"></label>
+      </div>
+      <button id="createCustomer">Registrar cliente</button>
+      <p id="customerMsg" class="msg"></p>
+      <div id="newCard" class="new-card hidden">
+        <div>
+          <strong id="newCardTitle">Tarjeta creada</strong>
+          <p id="newCardText"></p>
+          <div id="qrOutput"></div>
+          <p class="muted small-note">El cliente puede escanear este QR con la cámara de su celular para ver su tarjeta. El cajero lo escanea desde <strong>Escanear QR</strong> para sumar sellos.</p>
+          <div><a id="sendWhatsapp" class="btn-link wa" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+               <a id="openCard" class="btn-link" target="_blank" rel="noopener">Ver tarjeta del cliente</a>
+               <button id="downloadQr" class="secondary small-action">Descargar QR</button>
+               <button id="closeQr" class="ghost small-action">Cerrar</button></div>
+        </div>
+      </div>
+      <div class="section-head table-title">
+        <div><h3>Clientes registrados</h3><p>Los premios se habilitan cuando la tarjeta alcanza los sellos requeridos.</p></div>
+      </div>
+      <input id="filter" placeholder="Buscar por nombre o celular">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Celular</th><th>Progreso</th><th>Beneficio</th><th>Acción</th></tr></thead>
+          <tbody id="customerRows"><tr><td colspan="5">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ESCÁNER -->
+    <section id="scanner" class="panel tab-panel hidden">
+      <h2>Registrar sellos</h2>
+      <p>Escanea el QR del cliente <strong>desde aquí</strong> (no con la cámara normal del celular). Si la cámara no funciona, usa el botón <strong>+ Sellos</strong> en la lista de Clientes.</p>
+      <div id="scanRule" class="notice hidden"></div>
+      <label class="qty">Sellos a sumar en este escaneo
+        <span class="qty-row">
+          <button type="button" class="secondary qty-btn" data-qty="-1">−</button>
+          <input id="scanQty" type="number" min="1" max="100" step="1" value="1" inputmode="numeric">
+          <button type="button" class="secondary qty-btn" data-qty="1">+</button>
+        </span>
+      </label>
+      <div id="reader"></div>
+      <button id="startScan">Activar cámara</button>
+      <button id="stopScan" class="secondary">Detener cámara</button>
+      <p id="scanMsg" class="msg"></p>
+    </section>
+
+    <!-- FIDELIZACIÓN -->
+    <section id="settings" class="panel tab-panel hidden">
+      <h2>Política de fidelización</h2>
+      <p>Cada negocio define cómo se gana un sello, cuántos sellos completan la tarjeta y qué premios entrega.</p>
+      <div class="notice">
+        Al guardar, se crea una versión nueva del programa. Las tarjetas que ya están en curso terminan su ciclo con las reglas anteriores; los clientes nuevos y los que canjeen su premio final pasan a las reglas nuevas.
+      </div>
+      <label>Nombre del programa<input id="programName" maxlength="100" placeholder="Ej. Cliente frecuente"></label>
+      <label>¿Cómo se gana un sello?<input id="stampRule" maxlength="300" placeholder="Ej. 1 sello por cada 2 cuartos de pollo · 1 sello por cada corte"></label>
+      <div class="form-grid">
+        <label>Sellos para completar la tarjeta<input id="stampsRequired" type="number" min="1" max="1000" step="1" placeholder="Ej. 10"></label>
+        <label>Premio final (al completar)<input id="rewardDescription" maxlength="500" placeholder="Ej. Corte gratis"></label>
+      </div>
+      <h3>Premios intermedios <span class="muted">(opcional)</span></h3>
+      <p class="muted">Ej.: en el ticket 3 una <strong>sorpresa</strong> 🎁 y en el 7 un 15% de descuento. Cada premio puede tener su ícono. Si marcas <strong>Sorpresa</strong>, el cliente ve el ícono pero no sabe qué es hasta llegar. Se canjean una vez por ciclo y no reinician la tarjeta.</p>
+      <div id="milestoneRows"></div>
+      <button id="addMilestone" type="button" class="secondary">+ Agregar premio intermedio</button>
+      <div class="templates">
+        <span class="muted">Cargar un ejemplo por rubro:</span>
+        <span id="templateButtons"></span>
+      </div>
+      <button id="saveProgram">Guardar nueva política</button>
+      <p id="settingsMsg" class="msg"></p>
+      <div class="current-program">
+        <h3>Política activa</h3>
+        <div id="activeProgram">Cargando configuración...</div>
+      </div>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section id="history" class="panel tab-panel hidden">
+      <h2>Historial de premios entregados</h2>
+      <p>Registro de los canjes realizados en este negocio.</p>
+      <button id="refreshHistory" class="secondary">Actualizar historial</button>
+      <p id="historyMsg" class="msg"></p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Cliente</th><th>Premio entregado</th><th>Tipo</th><th>Sellos</th><th>Responsable</th></tr></thead>
+          <tbody id="historyRows"><tr><td colspan="6">Selecciona esta pestaña para cargar el historial.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AUDITORÍA -->
+    <section id="audit" class="panel tab-panel hidden">
+      <h2>Auditoría</h2>
+      <p>Últimas 200 acciones registradas en este negocio.</p>
+      <button id="refreshAudit" class="secondary">Actualizar</button>
+      <p id="auditMsg" class="msg"></p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Acción</th><th>Detalle</th><th>Usuario</th></tr></thead>
+          <tbody id="auditRows"><tr><td colspan="4">Selecciona esta pestaña para cargar la auditoría.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- NEGOCIOS (SUPERADMIN) -->
+    <section id="businesses" class="panel tab-panel hidden">
+      <h2>Negocios</h2>
+      <p>Crea negocios, sube sus logos, gestiona sus usuarios y activa o suspende su acceso.</p>
+
+      <div class="sub-panel">
+        <h3 id="bizFormTitle">Nuevo negocio</h3>
+        <div class="form-grid">
+          <label>Nombre del negocio<input id="bizName" maxlength="120" placeholder="Ej. Cafetería Central"></label>
+          <label>Identificador (opcional)<input id="bizSlug" maxlength="60" placeholder="Se genera desde el nombre"></label>
+          <label>Teléfono<input id="bizPhone" maxlength="30" inputmode="tel" placeholder="Ej. 70000000"></label>
+          <label>Rubro<select id="bizCategory"></select></label>
+          <label>Logo (PNG, JPG o WEBP · máx. 2 MB)<input id="bizLogo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        </div>
+        <div class="logo-row">
+          <img id="bizLogoPreview" class="biz-logo hidden" alt="Vista previa del logo">
+          <label class="inline hidden" id="bizRemoveLogoWrap"><input type="checkbox" id="bizRemoveLogo"> Quitar logo actual</label>
+        </div>
+        <button id="saveBusiness">Crear negocio</button>
+        <button id="cancelBusinessEdit" class="ghost hidden">Cancelar edición</button>
+        <p id="bizMsg" class="msg"></p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Logo</th><th>Negocio</th><th>Identificador</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="businessRows"><tr><td colspan="6">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div id="bizUsers" class="sub-panel hidden">
+        <h3>Usuarios de <span id="bizUsersName"></span></h3>
+        <p>El <strong>administrador</strong> configura la fidelización y ve la auditoría. El <strong>cajero / vendedor</strong> registra clientes, sellos y canjes.</p>
+        <div class="form-grid">
+          <label>Nombre completo<input id="memberName" maxlength="120" placeholder="Ej. Juan Rojas"></label>
+          <label>Correo electrónico<input id="memberEmail" type="email" maxlength="200" autocomplete="off"></label>
+          <label>Contraseña inicial
+            <span class="input-row"><input id="memberPassword" type="text" maxlength="72" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+            <button id="genPassword" type="button" class="secondary small-action">Generar</button></span>
+          </label>
+          <label>Rol
+            <select id="memberRole">
+              <option value="admin_negocio">Administrador del negocio</option>
+              <option value="vendedor">Cajero / Vendedor</option>
+            </select>
+          </label>
+        </div>
+        <button id="createMember">Crear usuario</button>
+        <p id="memberMsg" class="msg"></p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="memberRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+<footer>© EMISOFT · Empresa Innovadora de Software · v1.3.2</footer>
+<script src="app.js?v=1.3.2"></script>
+</body>
+</html>
