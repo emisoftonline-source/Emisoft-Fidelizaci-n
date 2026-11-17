@@ -1,4 +1,4 @@
-// EMISOFT Fidelización Digital 1.2 · Edge Function "emisoft-admin"
+// EMISOFT Fidelización Digital 1.4 · Edge Function "emisoft-admin"
 //
 // Operaciones que necesitan la clave service_role (solo existe aquí, en el
 // servidor de Supabase; nunca en el navegador):
@@ -137,7 +137,7 @@ async function createUser(
   // El trigger handle_new_auth_user crea el perfil; aquí se fija nombre y rol.
   const { error: profileError } = await admin
     .from("profiles")
-    .upsert({ id: userId, full_name: fullName, role }, { onConflict: "id" });
+    .upsert({ id: userId, full_name: fullName, role, must_change_password: true }, { onConflict: "id" });
 
   const { data: membership, error: memberError } = profileError
     ? { data: null, error: profileError }
@@ -189,6 +189,10 @@ async function resetPassword(
 
   const { error } = await admin.auth.admin.updateUserById(userId, { password });
   if (error) return json({ error: "No se pudo cambiar la contraseña: " + error.message }, 400);
+
+  // Contraseña puesta por el superadmin: el usuario debe cambiarla al ingresar.
+  // (Se marca DESPUÉS de cambiarla, porque el cambio quita la marca.)
+  await admin.from("profiles").update({ must_change_password: true }).eq("id", userId);
 
   // Registrar en la auditoría de cada negocio del usuario (nunca la contraseña).
   const { data: memberships } = await admin

@@ -5,16 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#102747">
   <title>EMISOFT | Fidelización Digital</title>
-  <link rel="stylesheet" href="styles.css?v=1.3.2">
+  <link rel="stylesheet" href="styles.css?v=1.4.0">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="config.js?v=1.3.2"></script>
+  <script src="config.js?v=1.4.0"></script>
 </head>
 <body>
 <header>
   <div class="brand">EMI<span>SOFT</span><small>FIDELIZACIÓN DIGITAL</small></div>
-  <button id="logout" class="ghost hidden">Cerrar sesión</button>
+  <div class="header-actions">
+    <button id="myPassword" class="ghost hidden">Mi contraseña</button>
+    <button id="logout" class="ghost hidden">Cerrar sesión</button>
+  </div>
 </header>
 <main>
   <section id="login" class="panel narrow">
@@ -25,6 +28,24 @@
     <label>Contraseña<input id="password" type="password" autocomplete="current-password"></label>
     <button id="loginBtn">Ingresar</button>
     <p id="loginMsg" class="msg"></p>
+  </section>
+
+  <section id="pwPanel" class="panel narrow hidden">
+    <p class="eyebrow">SEGURIDAD DE TU CUENTA</p>
+    <h1 id="pwTitle">Crea tu contraseña</h1>
+    <p id="pwIntro"></p>
+    <label id="pwCurrentWrap">Contraseña actual<input id="pwCurrent" type="password" autocomplete="current-password"></label>
+    <label>Nueva contraseña<input id="pwNew" type="password" autocomplete="new-password" maxlength="72"></label>
+    <ul id="pwRules" class="pw-rules">
+      <li data-rule="len">Al menos 8 caracteres</li>
+      <li data-rule="letter">Al menos una letra</li>
+      <li data-rule="digit">Al menos un número</li>
+    </ul>
+    <label>Repite la nueva contraseña<input id="pwConfirm" type="password" autocomplete="new-password" maxlength="72"></label>
+    <label class="inline"><input type="checkbox" id="pwShow"> Mostrar contraseñas</label>
+    <button id="pwSave">Guardar mi contraseña</button>
+    <button id="pwCancel" class="ghost hidden">Cancelar</button>
+    <p id="pwMsg" class="msg"></p>
   </section>
 
   <section id="app" class="hidden">
@@ -227,7 +248,7 @@
     </section>
   </section>
 </main>
-<footer>© EMISOFT · Empresa Innovadora de Software · v1.3.2</footer>
-<script src="app.js?v=1.3.2"></script>
+<footer>© EMISOFT · Empresa Innovadora de Software · v1.4.0</footer>
+<script src="app.js?v=1.4.0"></script>
 </body>
 </html>

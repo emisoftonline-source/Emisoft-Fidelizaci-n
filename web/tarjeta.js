@@ -1,4 +1,4 @@
-// EMISOFT Fidelización Digital · Tarjeta del cliente · v1.3.2
+// EMISOFT Fidelización Digital · Tarjeta del cliente · v1.4.0
 (async () => {
   const $ = id => document.getElementById(id);
   const show = (id, on = true) => $(id).classList.toggle('hidden', !on);

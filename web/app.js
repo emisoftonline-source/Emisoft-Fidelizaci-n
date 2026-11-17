@@ -1,4 +1,4 @@
-// EMISOFT Fidelización Digital · v1.3.2
+// EMISOFT Fidelización Digital · v1.4.0
 const $ = id => document.getElementById(id);
 const LOGO_BUCKET = 'business-logos';
 const STORAGE_KEY = 'emisoft_business_id';
@@ -9,7 +9,8 @@ const AUDIT_LABELS = {
   business_created:'Negocio creado', business_updated:'Negocio editado',
   business_activated:'Negocio activado', business_suspended:'Negocio suspendido',
   member_created:'Usuario creado', member_activated:'Usuario activado',
-  member_deactivated:'Usuario desactivado', password_reset:'Contraseña restablecida',
+  member_deactivated:'Usuario desactivado', password_reset:'Contraseña restablecida por EMISOFT',
+  password_changed:'Contraseña cambiada por el propio usuario',
   milestone_redeemed:'Premio intermedio canjeado'
 };
 
@@ -92,6 +93,11 @@ async function enterApp() {
   const {data: profile, error: pe} = await sb.from('profiles').select('role,full_name').eq('id', user.id).single();
   if (pe) return message('appMsg', 'No se pudo leer el perfil: ' + pe.message, true);
   isSuper = profile.role === 'superadmin';
+  $('myPassword').classList.remove('hidden');
+  if (!isSuper) {
+    const {data: pending, error: pce} = await sb.rpc('password_change_pending');
+    if (!pce && pending) return openPasswordPanel(true);
+  }
   $('userInfo').textContent = (profile.full_name ? profile.full_name + ' · ' : '') + (user.email || '');
   document.querySelectorAll('.super-only').forEach(el => el.classList.toggle('hidden', !isSuper));
 
@@ -177,6 +183,86 @@ async function loadStaffNames() {
   staffNames[currentUser.id] = staffNames[currentUser.id] || (isSuper ? 'Superadministrador' : 'Tú');
 }
 function staffName(id) { return staffNames[id] || (id ? 'Usuario ' + String(id).slice(0, 8) : '—'); }
+
+// ---------- contraseña propia ----------
+let pwForced = false;
+function pwChecks(pw) {
+  return {len: pw.length >= 8, letter: /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(pw), digit: /\d/.test(pw)};
+}
+function renderPwRules() {
+  const c = pwChecks($('pwNew').value);
+  $('pwRules').querySelectorAll('li').forEach(li => li.classList.toggle('ok', !!c[li.dataset.rule]));
+}
+function openPasswordPanel(forced) {
+  pwForced = forced;
+  ['pwCurrent', 'pwNew', 'pwConfirm'].forEach(id => $(id).value = '');
+  $('pwShow').checked = false; togglePwShow();
+  renderPwRules();
+  message('pwMsg', '');
+  $('pwTitle').textContent = forced ? 'Crea tu propia contraseña' : 'Cambiar mi contraseña';
+  $('pwIntro').textContent = forced
+    ? 'Por tu seguridad, la contraseña que te entregaron es temporal. Crea una que solo tú conozcas para continuar. Nadie más, ni EMISOFT, podrá verla.'
+    : 'Escribe tu contraseña actual y la nueva. Te recomendamos no usar la misma contraseña de otras cuentas.';
+  $('pwCurrentWrap').classList.toggle('hidden', forced);
+  $('pwCancel').classList.toggle('hidden', forced);
+  $('app').classList.add('hidden');
+  $('login').classList.add('hidden');
+  $('pwPanel').classList.remove('hidden');
+  $('logout').classList.remove('hidden');
+  $('myPassword').classList.add('hidden');
+  (forced ? $('pwNew') : $('pwCurrent')).focus();
+}
+function closePasswordPanel() {
+  $('pwPanel').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  $('myPassword').classList.remove('hidden');
+}
+function togglePwShow() {
+  const t = $('pwShow').checked ? 'text' : 'password';
+  ['pwCurrent', 'pwNew', 'pwConfirm'].forEach(id => $(id).type = t);
+}
+function authErrorText(error) {
+  const code = error?.code || '', msg = error?.message || String(error);
+  if (code === 'same_password' || /different from the old/i.test(msg)) return 'La nueva contraseña debe ser distinta a la anterior.';
+  if (code === 'weak_password' || /weak|at least/i.test(msg)) return 'La contraseña es muy débil. Usa al menos 8 caracteres con letras y números.';
+  if (code === 'reauthentication_needed' || /reauthenticat/i.test(msg)) return 'Por seguridad, cierra sesión, vuelve a ingresar y cambia la contraseña de inmediato.';
+  if (/invalid login credentials/i.test(msg)) return 'La contraseña actual no es correcta.';
+  return msg;
+}
+async function savePassword() {
+  const current = $('pwCurrent').value, pw = $('pwNew').value, confirmPw = $('pwConfirm').value;
+  const c = pwChecks(pw);
+  if (!c.len || !c.letter || !c.digit) return message('pwMsg', 'La nueva contraseña debe tener al menos 8 caracteres, con letras y números.', true);
+  if (pw !== confirmPw) return message('pwMsg', 'Las dos contraseñas nuevas no coinciden.', true);
+  $('pwSave').disabled = true;
+  try {
+    if (!pwForced) {
+      if (!current) throw new Error('Escribe tu contraseña actual.');
+      if (current === pw) throw new Error('La nueva contraseña debe ser distinta a la actual.');
+      message('pwMsg', 'Verificando tu contraseña actual...');
+      const {error: ve} = await sb.auth.signInWithPassword({email: currentUser.email, password: current});
+      if (ve) throw new Error(authErrorText(ve));
+    }
+    message('pwMsg', 'Guardando...');
+    const {error} = await sb.auth.updateUser({password: pw});
+    if (error) throw new Error(authErrorText(error));
+    await sb.rpc('log_own_password_changed');
+    message('pwMsg', 'Contraseña actualizada.');
+    if (pwForced) {
+      pwForced = false;
+      $('pwPanel').classList.add('hidden');
+      await enterApp();
+      message('appMsg', '✔ Tu contraseña fue creada. Desde ahora solo tú la conoces. Puedes cambiarla cuando quieras en "Mi contraseña".');
+    } else {
+      closePasswordPanel();
+      message('appMsg', '✔ Tu contraseña fue cambiada correctamente.');
+    }
+  } catch (e) {
+    message('pwMsg', e.message || String(e), true);
+  } finally {
+    $('pwSave').disabled = false;
+  }
+}
 
 // ---------- programas / política ----------
 const CATEGORIES = ['Restaurante', 'Pollería', 'Pizzería', 'Cafetería', 'Heladería', 'Panadería / Pastelería',
@@ -749,7 +835,7 @@ async function createMember() {
     if (!membersCache.some(m => (m.email || '').toLowerCase() === email.toLowerCase())) {
       throw new Error('La función respondió, pero el usuario no aparece en el negocio. Revisa Supabase > Edge Functions > emisoft-admin > Logs.');
     }
-    message('memberMsg', `Usuario creado. Entrega estos datos a ${full_name}: correo ${email} · contraseña ${password}`);
+    message('memberMsg', `Usuario creado. Entrega estos datos a ${full_name}: correo ${email} · contraseña temporal ${password}. Al ingresar por primera vez deberá crear su propia contraseña.`);
     if (currentBusiness?.id === usersBusiness.id) await loadStaffNames();
   } catch (e) {
     message('memberMsg', e.message, true);
@@ -760,13 +846,13 @@ async function createMember() {
 async function resetMemberPassword(userId) {
   const m = membersCache.find(x => x.user_id === userId);
   const who = m?.full_name || m?.email || 'este usuario';
-  const pw = prompt(`Nueva contraseña para ${who} (mínimo 8 caracteres):`, randomPassword());
+  const pw = prompt(`Contraseña temporal para ${who} (mínimo 8 caracteres).\nAl ingresar, el usuario deberá crear su propia contraseña:`, randomPassword());
   if (pw === null) return;
   if (pw.length < 8) return message('memberMsg', 'La contraseña debe tener al menos 8 caracteres.', true);
   message('memberMsg', 'Restableciendo contraseña...');
   try {
     await callAdmin({action: 'reset_password', user_id: userId, new_password: pw});
-    message('memberMsg', `Contraseña de ${who} restablecida. Nueva contraseña: ${pw}`);
+    message('memberMsg', `Contraseña de ${who} restablecida. Contraseña temporal: ${pw}. Al ingresar deberá crear una nueva.`);
   } catch (e) {
     message('memberMsg', e.message, true);
   }
@@ -796,6 +882,12 @@ function showTab(tabName) {
 $('loginBtn').addEventListener('click', login);
 $('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 $('logout').addEventListener('click', logout);
+$('myPassword').addEventListener('click', () => openPasswordPanel(false));
+$('pwSave').addEventListener('click', savePassword);
+$('pwCancel').addEventListener('click', closePasswordPanel);
+$('pwShow').addEventListener('change', togglePwShow);
+$('pwNew').addEventListener('input', renderPwRules);
+$('pwConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') savePassword(); });
 $('businessPicker').addEventListener('change', e => selectBusiness(e.target.value));
 $('createCustomer').addEventListener('click', createCustomer);
 $('filter').addEventListener('input', renderCustomers);

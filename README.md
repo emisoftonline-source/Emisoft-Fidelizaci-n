@@ -1,7 +1,7 @@
 # EMISOFT · Fidelización Digital
 
 Sistema de tarjetas de fidelización con códigos QR para varios negocios.
-Versión actual: **1.3.2**
+Versión actual: **1.4.0**
 
 ## Estructura
 
@@ -36,3 +36,4 @@ Los cambios de **base de datos** y de la **Edge Function** no se publican solos:
 | 1.3.0 | Política por negocio: regla del sello, varios sellos a la vez, premios intermedios |
 | 1.3.1 | Rubros, íconos por premio y premios sorpresa |
 | 1.3.2 | Aviso en la tarjeta: cuánto falta para el próximo premio |
+| 1.4.0 | Cambio obligatorio de contraseña al primer ingreso y tras cada restablecimiento; opción "Mi contraseña" |

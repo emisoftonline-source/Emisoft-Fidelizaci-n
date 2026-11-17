@@ -92,3 +92,11 @@ button.gift-btn{background:#f5a623;color:#fff}
 .small-text{font-size:12px;margin-top:2px}
 #templateButtons{display:inline-flex;flex-wrap:wrap;gap:4px}
 @media(max-width:700px){.milestone-row{grid-template-columns:80px 80px 1fr}.milestone-row .ms-surprise-wrap,.milestone-row .ms-remove{grid-column:auto}}
+
+/* v1.4 contraseña */
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.header-actions button{margin:0}
+.pw-rules{list-style:none;padding:0;margin:-6px 0 8px;font-size:13px;color:#8190a3}
+.pw-rules li{padding:2px 0}
+.pw-rules li::before{content:'○ ';font-weight:800}
+.pw-rules li.ok{color:#14836f}.pw-rules li.ok::before{content:'✔ '}
